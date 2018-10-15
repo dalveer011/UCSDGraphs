@@ -1,13 +1,10 @@
 package basicgraph;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
 import util.GraphLoader;
 
 /** An abstract class that implements a directed graph. 
@@ -122,7 +119,23 @@ public abstract class Graph {
 	 */
 	public List<Integer> degreeSequence() {
 		// XXX: Implement in part 1 of week 2
-		return null;
+		List<Integer> degreeSequence = new ArrayList<Integer>();
+		
+		for(int i=0;i<this.numVertices;i++) {
+			int outDegree = this.getNeighbors(i).size();
+			int inDegree = this.getInNeighbors(i).size();
+			int degree = outDegree+inDegree;
+			degreeSequence.add(degree);
+		}
+		//SortedList<Integer> finalList = new SortedList((ObservableList) degreeSequence);
+		degreeSequence.sort(new Comparator<Integer>() {
+			@Override
+			public int compare(Integer o1, Integer o2) {
+				// TODO Auto-generated method stub
+				return o2-o1;
+			}
+		});
+		return degreeSequence;
 	}
 	
 	/**
@@ -243,6 +256,10 @@ public abstract class Graph {
 		GraphAdjList graphFromFile = new GraphAdjList();
 		GraphLoader.loadRoadMap("data/testdata/simpletest.map", graphFromFile);
 		System.out.println(graphFromFile);
+		System.out.println("Calculating degree sequence here");
+		for(Integer a : graphFromFile.degreeSequence()) {
+			System.out.print(a + " ");
+		}
 		
 		System.out.println("Observe all degrees are <= 12.");
 		System.out.println("****");
