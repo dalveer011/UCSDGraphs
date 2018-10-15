@@ -109,11 +109,14 @@ public class GraphAdjMatrix extends Graph {
 		
 		int[][] multiply = new int[this.getNumVertices()][this.getNumVertices()];
 		for(int row=0;row < multiply.length;row++) {
-			
 			for(int col = 0;col < multiply[row].length;col++) {
-				multiply[row][col] += (this.adjMatrix[row][col]*this.adjMatrix[col][row]);
-				
-				
+				multiply[row][col] = 0;
+				for(int i =0;i<multiply[row].length;i++) {
+					multiply[row][col] += this.adjMatrix[row][i]*this.adjMatrix[i][col];
+				}
+				if(multiply[row][col] > 0 && row == v) {
+					distance2.add(col);
+				}
 			}
 		}
 		return distance2;
