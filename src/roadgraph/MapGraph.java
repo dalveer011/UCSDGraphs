@@ -8,7 +8,12 @@
 package roadgraph;
 
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -24,14 +29,18 @@ import util.GraphLoader;
  */
 public class MapGraph {
 	//TODO: Add your member variables here in WEEK 3
-	
-	
+	private HashMap<GeographicPoint,Intersection> mapGraph;
+	private int numberOfVertices;
+	private int numberOfEdges;
 	/** 
 	 * Create a new empty MapGraph 
 	 */
 	public MapGraph()
 	{
 		// TODO: Implement in this constructor in WEEK 3
+		this.mapGraph = new HashMap<GeographicPoint,Intersection>();
+		this.numberOfVertices = 0;
+		this.numberOfEdges = 0;
 	}
 	
 	/**
@@ -41,7 +50,7 @@ public class MapGraph {
 	public int getNumVertices()
 	{
 		//TODO: Implement this method in WEEK 3
-		return 0;
+		return this.numberOfVertices;
 	}
 	
 	/**
@@ -51,7 +60,7 @@ public class MapGraph {
 	public Set<GeographicPoint> getVertices()
 	{
 		//TODO: Implement this method in WEEK 3
-		return null;
+		return this.mapGraph.keySet();
 	}
 	
 	/**
@@ -61,7 +70,7 @@ public class MapGraph {
 	public int getNumEdges()
 	{
 		//TODO: Implement this method in WEEK 3
-		return 0;
+		return this.numberOfEdges;
 	}
 
 	
@@ -76,7 +85,14 @@ public class MapGraph {
 	public boolean addVertex(GeographicPoint location)
 	{
 		// TODO: Implement this method in WEEK 3
+		if(location.equals(null) || this.mapGraph.containsKey(location))
 		return false;
+		
+		Intersection newVertex = new Intersection(location);
+		this.mapGraph.put(location, newVertex);
+		this.numberOfVertices++;
+		
+		return true;
 	}
 	
 	/**
@@ -95,7 +111,20 @@ public class MapGraph {
 			String roadType, double length) throws IllegalArgumentException {
 
 		//TODO: Implement this method in WEEK 3
+		if(!this.mapGraph.containsKey(from) || !this.mapGraph.containsKey(to) ||
+				from.equals(null) || to.equals(null)) {
+			throw new IllegalArgumentException();
+		}
+		if(roadType.equals(null) || roadName.equals(null) || length < 0)
+			 throw new IllegalArgumentException();
 		
+		Road edge = new Road(roadType,roadName,length);
+		
+		Intersection first = this.mapGraph.get(from);
+		Intersection second = this.mapGraph.get(to);
+		
+		first.addRoad(second, edge);
+		this.numberOfEdges++;
 	}
 	
 
@@ -124,11 +153,58 @@ public class MapGraph {
 			 					     GeographicPoint goal, Consumer<GeographicPoint> nodeSearched)
 	{
 		// TODO: Implement this method in WEEK 3
+		List<GeographicPoint> bfs = new ArrayList<GeographicPoint>();
+		HashMap<GeographicPoint,GeographicPoint> parent = new HashMap<GeographicPoint,GeographicPoint>();
+		Queue<Intersection> queue = new LinkedList<Intersection>();
+		queue.add(this.mapGraph.get(start));
 		
-		// Hook for visualization.  See writeup.
-		//nodeSearched.accept(next.getLocation());
-
-		return null;
+		HashSet<GeographicPoint> visited = new HashSet<GeographicPoint>();
+		visited.add(start);
+		Intersection current = null;
+		while(!queue.isEmpty()) {
+			
+			current = queue.remove();
+			
+			if(current.getCordinate().equals(goal)) {
+				break;
+			}
+			HashMap<Intersection,Road> neighbours = current.getNeighbours();
+			
+			if(neighbours.equals(null)) {
+				continue;
+			}
+			
+			for(Intersection item:neighbours.keySet()) {
+				if(!visited.contains(item.getCordinate())) {
+					visited.add(item.getCordinate());
+					parent.put(item.getCordinate(),current.getCordinate());
+					queue.add(item);	
+					nodeSearched.accept(current.getCordinate());
+				}		
+			}
+			
+			
+		}
+		GeographicPoint curr = current.getCordinate();
+		if(!curr.equals(goal)) {
+			return null;
+		}
+		while(!curr.equals(start)) {
+			bfs.add(curr);
+			curr = parent.get(curr);
+			if(curr.equals(start)) {
+				bfs.add(start);		
+			}
+			if(curr.equals(null))
+				break;
+		}
+		
+		List<GeographicPoint> finalBFS = new ArrayList<GeographicPoint>();
+		for(int i=bfs.size()-1;i>=0;i--) {
+			finalBFS.add(bfs.get(i));
+		}
+		return finalBFS;
+		
 	}
 	
 
@@ -201,12 +277,12 @@ public class MapGraph {
 	
 	public static void main(String[] args)
 	{
-		System.out.print("Making a new map...");
-		MapGraph firstMap = new MapGraph();
-		System.out.print("DONE. \nLoading the map...");
-		GraphLoader.loadRoadMap("data/testdata/simpletest.map", firstMap);
-		System.out.println("DONE.");
-		
+//		System.out.print("Making a new map...");
+//		MapGraph firstMap = new MapGraph();
+//		System.out.print("DONE. \nLoading the map...");
+//		GraphLoader.loadRoadMap("data/testdata/testdata2.map", firstMap);
+//		System.out.println("DONE.");
+//		
 		// You can use this method for testing.  
 		
 		
@@ -214,13 +290,19 @@ public class MapGraph {
 		 * the Week 3 End of Week Quiz, EVEN IF you score 100% on the 
 		 * programming assignment.
 		 */
+		
+//		MapGraph simpleTestMap = new MapGraph();
+//		GraphLoader.loadRoadMap("data/testdata/simpletest.map", simpleTestMap);
+		
+//		GeographicPoint testStart = new GeographicPoint(6.0, 6.0);
+//		GeographicPoint testEnd = new GeographicPoint(0.0, 0.0);
+//		
+//		System.out.println("Test 1 using simpletest: breadth first search");
+//		List<GeographicPoint> bfs = firstMap.bfs(testStart, testEnd);
+//		for(GeographicPoint visited:bfs) {
+//			System.out.print("("+visited.x+","+visited.y+") -> ");
+//		}
 		/*
-		MapGraph simpleTestMap = new MapGraph();
-		GraphLoader.loadRoadMap("data/testdata/simpletest.map", simpleTestMap);
-		
-		GeographicPoint testStart = new GeographicPoint(1.0, 1.0);
-		GeographicPoint testEnd = new GeographicPoint(8.0, -1.0);
-		
 		System.out.println("Test 1 using simpletest: Dijkstra should be 9 and AStar should be 5");
 		List<GeographicPoint> testroute = simpleTestMap.dijkstra(testStart,testEnd);
 		List<GeographicPoint> testroute2 = simpleTestMap.aStarSearch(testStart,testEnd);
