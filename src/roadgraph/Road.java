@@ -10,4 +10,17 @@ public class Road {
 		this.roadName = roadname;
 		this.roadType = roadtype;
 	}
+
+	public String getRoadType() {
+		return roadType;
+	}
+
+	public String getRoadName() {
+		return roadName;
+	}
+
+	public double getRoadLength() {
+		return roadLength;
+	}
+	
 }

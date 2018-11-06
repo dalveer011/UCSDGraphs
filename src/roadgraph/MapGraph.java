@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -153,7 +154,7 @@ public class MapGraph {
 			 					     GeographicPoint goal, Consumer<GeographicPoint> nodeSearched)
 	{
 		// TODO: Implement this method in WEEK 3
-		List<GeographicPoint> bfs = new ArrayList<GeographicPoint>();
+		
 		HashMap<GeographicPoint,GeographicPoint> parent = new HashMap<GeographicPoint,GeographicPoint>();
 		Queue<Intersection> queue = new LinkedList<Intersection>();
 		queue.add(this.mapGraph.get(start));
@@ -161,6 +162,7 @@ public class MapGraph {
 		HashSet<GeographicPoint> visited = new HashSet<GeographicPoint>();
 		visited.add(start);
 		Intersection current = null;
+		
 		while(!queue.isEmpty()) {
 			
 			current = queue.remove();
@@ -185,6 +187,94 @@ public class MapGraph {
 			
 			
 		}
+		return this.generatePath(current, start, goal, parent);	
+	}
+	
+
+	/** Find the path from start to goal using Dijkstra's algorithm
+	 * 
+	 * @param start The starting location
+	 * @param goal The goal location
+	 * @return The list of intersections that form the shortest path from 
+	 *   start to goal (including both start and goal).
+	 */
+	public List<GeographicPoint> dijkstra(GeographicPoint start, GeographicPoint goal) {
+		// Dummy variable for calling the search algorithms
+		// You do not need to change this method.
+        Consumer<GeographicPoint> temp = (x) -> {};
+        return dijkstra(start, goal, temp);
+	}
+	
+	public void initGraphWithInfiniteDistances() {
+		for(GeographicPoint item:this.mapGraph.keySet()) {
+			Intersection a = this.mapGraph.get(item);
+			a.setDistance(Double.POSITIVE_INFINITY);
+		}
+	}
+	
+	/** Find the path from start to goal using Dijkstra's algorithm
+	 * 
+	 * @param start The starting location
+	 * @param goal The goal location
+	 * @param nodeSearched A hook for visualization.  See assignment instructions for how to use it.
+	 * @return The list of intersections that form the shortest path from 
+	 *   start to goal (including both start and goal).
+	 */
+	public List<GeographicPoint> dijkstra(GeographicPoint start, 
+										  GeographicPoint goal, Consumer<GeographicPoint> nodeSearched)
+	{
+		// TODO: Implement this method in WEEK 4
+		this.initGraphWithInfiniteDistances();
+		HashMap<GeographicPoint,GeographicPoint> parent = new HashMap<GeographicPoint,GeographicPoint>();
+		PriorityQueue<Intersection> queue = new PriorityQueue<Intersection>(new DistanceComparator());
+
+		this.mapGraph.get(start).setDistance(0);
+		queue.add(this.mapGraph.get(start));
+		int nodeVisited = 0;
+		HashSet<GeographicPoint> visited = new HashSet<GeographicPoint>();
+		
+		Intersection current = null;
+		
+		while(!queue.isEmpty()) {
+			current = queue.remove();
+			nodeVisited++;
+			
+			if(!visited.contains(current.getCordinate())) 
+				visited.add(current.getCordinate());
+			
+			if(current.getCordinate().equals(goal)) {
+				break;
+			}
+			HashMap<Intersection,Road> neighbours = current.getNeighbours();
+			
+			if(neighbours.equals(null)) {
+				continue;
+			}
+			
+			for(Intersection item:neighbours.keySet()) {
+				if(!visited.contains(item.getCordinate())) {
+					
+					double totalDistance = current.distanceToAIntersectionForDijkstra(item)+current.getDistance();
+					
+					if(totalDistance <= item.getDistance()) {
+						item.setDistance(totalDistance);
+						parent.put(item.getCordinate(),current.getCordinate());
+						queue.add(item);
+					}		
+					nodeSearched.accept(current.getCordinate());
+				}		
+			}
+			
+			
+		}
+		System.out.println("Dijkstra Visited "+nodeVisited);
+		return this.generatePath(current, start, goal, parent);
+		// Hook for visualization.  See writeup.
+		//nodeSearched.accept(next.getLocation());
+		
+	}
+	public List<GeographicPoint> generatePath(Intersection current,GeographicPoint start,GeographicPoint goal,HashMap<GeographicPoint,GeographicPoint> parent){
+		List<GeographicPoint> bfs = new ArrayList<GeographicPoint>();
 		GeographicPoint curr = current.getCordinate();
 		if(!curr.equals(goal)) {
 			return null;
@@ -206,41 +296,6 @@ public class MapGraph {
 		return finalBFS;
 		
 	}
-	
-
-	/** Find the path from start to goal using Dijkstra's algorithm
-	 * 
-	 * @param start The starting location
-	 * @param goal The goal location
-	 * @return The list of intersections that form the shortest path from 
-	 *   start to goal (including both start and goal).
-	 */
-	public List<GeographicPoint> dijkstra(GeographicPoint start, GeographicPoint goal) {
-		// Dummy variable for calling the search algorithms
-		// You do not need to change this method.
-        Consumer<GeographicPoint> temp = (x) -> {};
-        return dijkstra(start, goal, temp);
-	}
-	
-	/** Find the path from start to goal using Dijkstra's algorithm
-	 * 
-	 * @param start The starting location
-	 * @param goal The goal location
-	 * @param nodeSearched A hook for visualization.  See assignment instructions for how to use it.
-	 * @return The list of intersections that form the shortest path from 
-	 *   start to goal (including both start and goal).
-	 */
-	public List<GeographicPoint> dijkstra(GeographicPoint start, 
-										  GeographicPoint goal, Consumer<GeographicPoint> nodeSearched)
-	{
-		// TODO: Implement this method in WEEK 4
-
-		// Hook for visualization.  See writeup.
-		//nodeSearched.accept(next.getLocation());
-		
-		return null;
-	}
-
 	/** Find the path from start to goal using A-Star search
 	 * 
 	 * @param start The starting location
@@ -266,11 +321,53 @@ public class MapGraph {
 											 GeographicPoint goal, Consumer<GeographicPoint> nodeSearched)
 	{
 		// TODO: Implement this method in WEEK 4
+		this.initGraphWithInfiniteDistances();
+		HashMap<GeographicPoint,GeographicPoint> parent = new HashMap<GeographicPoint,GeographicPoint>();
+		PriorityQueue<Intersection> queue = new PriorityQueue<Intersection>(new DistanceComparator());
+		Intersection startingPoint = this.mapGraph.get(start);
+		startingPoint.setDistance(0);
+		queue.add(startingPoint);
+		int nodeVisited = 0;
+		HashSet<GeographicPoint> visited = new HashSet<GeographicPoint>();
 		
+		Intersection current = null;
+		
+		while(!queue.isEmpty()) {
+			
+			current = queue.remove();
+			nodeVisited++;
+			if(!visited.contains(current.getCordinate())) 
+				visited.add(current.getCordinate());
+			
+			if(current.getCordinate().equals(goal)) {
+				break;
+			}
+			HashMap<Intersection,Road> neighbours = current.getNeighbours();
+			
+			if(neighbours.equals(null)) {
+				continue;
+			}
+			
+			for(Intersection item:neighbours.keySet()) {
+				if(!visited.contains(item.getCordinate())) {
+					double totalDistance = current.distanceToAIntersectionForAStar(item,goal) + current.getDistance();
+					
+					if(totalDistance < item.getDistance()) {
+						item.setDistance(totalDistance);
+						parent.put(item.getCordinate(),current.getCordinate());
+						queue.add(item);
+					}		
+					nodeSearched.accept(current.getCordinate());
+				}		
+			}
+			
+			
+		}
+		System.out.println("A star Node Visited "+nodeVisited);
+		return this.generatePath(current, start, goal, parent);
+
 		// Hook for visualization.  See writeup.
 		//nodeSearched.accept(next.getLocation());
-		
-		return null;
 	}
 
 	
@@ -342,7 +439,55 @@ public class MapGraph {
 		List<GeographicPoint> route2 = theMap.aStarSearch(start,end);
 
 		*/
-		
+		 MapGraph simpleTestMap = new MapGraph();
+			GraphLoader.loadRoadMap("data/testdata/simpletest.map", simpleTestMap);
+			
+			GeographicPoint testStart = new GeographicPoint(1.0, 1.0);
+			GeographicPoint testEnd = new GeographicPoint(8.0, -1.0);
+			
+			System.out.println("Test 1 using simpletest: Dijkstra should be 9 and AStar should be 5");
+			List<GeographicPoint> testroute = simpleTestMap.dijkstra(testStart,testEnd);
+			List<GeographicPoint> testroute2 = simpleTestMap.aStarSearch(testStart,testEnd);
+			
+
+//			for(GeographicPoint visited:testroute) {
+//				System.out.print("("+visited.x+","+visited.y+") -> ");
+//			}
+//			System.out.println("A star found following path");
+//			for(GeographicPoint visited:testroute2) {
+//				System.out.print("("+visited.x+","+visited.y+") -> ");
+//			}
+			
+			
+			MapGraph testMap = new MapGraph();
+			GraphLoader.loadRoadMap("data/maps/utc.map", testMap);
+			
+//			// A very simple test using real data
+			testStart = new GeographicPoint(32.869423, -117.220917);
+			testEnd = new GeographicPoint(32.869255, -117.216927);
+			System.out.println("Test 2 using utc: Dijkstra should be 13 and AStar should be 5");
+			testroute = testMap.dijkstra(testStart,testEnd);
+			testroute2 = testMap.aStarSearch(testStart,testEnd);
+//			
+			
+//			// A slightly more complex test using real data
+			testStart = new GeographicPoint(32.8674388, -117.2190213);
+			testEnd = new GeographicPoint(32.8697828, -117.2244506);
+			System.out.println("Test 3 using utc: Dijkstra should be 37 and AStar should be 10");
+			testroute = testMap.dijkstra(testStart,testEnd);
+			testroute2 = testMap.aStarSearch(testStart,testEnd);
+			
+			
+//			MapGraph theMap = new MapGraph();
+//			System.out.print("DONE. \nLoading the map...");
+//			GraphLoader.loadRoadMap("data/maps/utc.map", theMap);
+//			System.out.println("DONE.");
+//
+//			GeographicPoint start = new GeographicPoint(32.8648772, -117.2254046);
+//			GeographicPoint end = new GeographicPoint(32.8660691, -117.217393);
+//
+//			List<GeographicPoint> route = theMap.dijkstra(start,end);
+//			List<GeographicPoint> route2 = theMap.aStarSearch(start,end);
 	}
 	
 }
